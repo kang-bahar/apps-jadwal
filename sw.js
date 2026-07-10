@@ -1,13 +1,14 @@
-const CACHE_NAME = 'jadwalku-v2';
-
+const CACHE_NAME = 'jadwalku-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  // Cache file external agar bisa digunakan full offline
-  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+  // Cache file external agar shell aplikasi tetap tampil walau offline
+  // (CATATAN: data jadwal tetap butuh internet karena sekarang disimpan di Firebase)
+  'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
+  'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
 ];
 
 // File yang SELALU dicek ke server dulu (app-shell / HTML) supaya update langsung kebaca.
@@ -17,7 +18,7 @@ const NETWORK_FIRST_PATHS = ['./', './index.html', '/index.html'];
 function isNetworkFirst(request) {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return false;
-  return NETWORK_FIRST_PATHS.some(p => url.pathname.endsWith(p.replace('./', '')) || url.pathname === '/' );
+  return NETWORK_FIRST_PATHS.some(p => url.pathname.endsWith(p.replace('./', '')) || url.pathname === '/');
 }
 
 // Install Service Worker
@@ -25,6 +26,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(ASSETS_TO_CACHE))
+      .catch((err) => console.warn('Gagal cache sebagian asset:', err))
   );
   self.skipWaiting(); // langsung aktifkan SW baru tanpa menunggu tab lama tertutup
 });
@@ -48,6 +50,16 @@ self.addEventListener('activate', (event) => {
 // Intercept Network Requests
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  // Jangan campur tangan sama request ke Firebase (auth & database realtime)
+  // biar koneksi live-nya tidak diganggu oleh service worker.
+  const reqUrl = new URL(event.request.url);
+  if (reqUrl.hostname.includes('firebaseio.com') ||
+      reqUrl.hostname.includes('firebasedatabase.app') ||
+      reqUrl.hostname.includes('googleapis.com') && reqUrl.pathname.includes('identitytoolkit') ||
+      reqUrl.hostname.includes('gstatic.com')) {
+    return; // biarkan lewat langsung ke network, tidak di-cache/intercept
+  }
 
   // Strategi NETWORK FIRST untuk HTML/app-shell -> selalu ambil versi terbaru dari server dulu
   if (isNetworkFirst(event.request)) {
