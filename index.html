@@ -14,8 +14,11 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
   
   <style>
     :root {
@@ -233,10 +236,105 @@
         .export-card { padding: 12px; }
         .table-responsive { border: none; }
     }
+
+    /* ==========================================
+       PUBLIC LANDING PAGE
+       ========================================== */
+    #public-app { min-height: 100vh; background: var(--bg-app); display: flex; flex-direction: column; }
+    .public-header { background: var(--gradient); padding: 20px 20px 16px; text-align: center; position: relative; border-bottom: 4px solid var(--warning); }
+    .public-header-topbar { position: absolute; top: 12px; right: 16px; }
+    .btn-masuk-sistem { background: var(--warning); color: white; border: none; padding: 8px 14px; border-radius: var(--radius-full); font-weight: 700; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: 0.2s; }
+    .btn-masuk-sistem:hover { background: #d97706; transform: translateY(-1px); }
+    .public-logo { width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-size: 1.3rem; color: white; }
+    .public-header h1 { color: white; font-size: 1.2rem; font-weight: 800; letter-spacing: -0.3px; margin-bottom: 3px; }
+    .public-header .public-subtitle { color: rgba(255,255,255,0.9); font-size: 0.78rem; font-weight: 500; }
+
+    .public-main { max-width: 1280px; width: 100%; margin: 0 auto; padding: 22px 16px 36px; flex: 1; }
+    .public-title-block { text-align: center; margin-bottom: 14px; }
+    .public-title-block h2 { font-size: 1.15rem; font-weight: 800; color: var(--dark); margin-bottom: 3px; }
+    .public-title-block p { color: var(--text-muted); font-size: 0.78rem; }
+
+    .public-mode-tabs { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+    .public-mode-btn { padding: 7px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: white; color: var(--text-main); font-weight: 700; font-size: 0.75rem; cursor: pointer; transition: 0.2s; display:inline-flex; align-items:center; gap:5px; }
+    .public-mode-btn:hover { border-color: var(--secondary); }
+    .public-mode-btn.active { background: var(--secondary); color: white; border-color: var(--secondary); }
+
+    .public-filter-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+    .public-filter-row select { max-width: 260px; }
+
+    .public-tabs { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+    .public-tab-btn { padding: 6px 13px; border-radius: var(--radius-full); border: 1px solid var(--border); background: white; color: var(--text-main); font-weight: 700; font-size: 0.72rem; cursor: pointer; transition: 0.2s; }
+    .public-tab-btn:hover { border-color: var(--primary-light); }
+    .public-tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: var(--shadow-sm); }
+
+    .public-kelas-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: start; }
+    @media (max-width: 1100px) { .public-kelas-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 800px) { .public-kelas-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 520px) { .public-kelas-grid { grid-template-columns: 1fr; } }
+
+    .public-kelas-card { background: white; border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden; }
+    .public-kelas-card-header { background: var(--gradient); color: white; text-align: center; padding: 6px 6px; font-weight: 800; font-size: 0.78rem; }
+    .public-kelas-card table { width: 100%; font-size: 0.66rem; min-width: 0; }
+    .public-kelas-card th, .public-kelas-card td { padding: 4px 5px; }
+    .public-kelas-card th { background: #f8fafc; font-size: 0.58rem; }
+    .public-kelas-card td { color: var(--text-main); }
+    .public-kelas-card td.public-kosong { color: #cbd5e1; font-style: italic; }
+    .public-kelas-card tr.public-istirahat td { background: #fef3c7; color: #b45309; font-weight: 800; text-align: center; }
+
+    .public-single-card { max-width: 640px; margin: 0 auto; }
+    .public-single-card table { font-size: 0.75rem; }
+
+    .public-footer-note { text-align: center; color: var(--text-muted); font-size: 0.75rem; margin-top: 8px; }
+    .public-empty { text-align: center; padding: 40px 16px; color: var(--text-muted); }
+
+    /* Sidebar footer (logout / lihat publik) */
+    .sidebar-footer { padding: 10px 8px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; }
   </style>
 </head>
 <body>
-  <div class="app-container">
+
+  <div id="boot-loading" style="position:fixed; inset:0; background:#f1f5f9; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:9999; gap:12px; font-family:'Plus Jakarta Sans',sans-serif;">
+    <i class="fas fa-spinner fa-spin" style="font-size:2rem; color:#10b981;"></i>
+    <p style="color:#64748b; font-weight:600;">Memuat data jadwal...</p>
+  </div>
+
+  <!-- ================= PUBLIC LANDING PAGE ================= -->
+  <div id="public-app" style="display:none;">
+    <div class="public-header">
+      <div class="public-header-topbar">
+        <button class="btn-masuk-sistem" onclick="openLoginModal()"><i class="fas fa-sign-in-alt"></i> Masuk Sistem</button>
+      </div>
+      <div class="public-logo"><i class="fas fa-school"></i></div>
+      <h1 id="public-nama-sekolah">Nama Sekolah</h1>
+      <div class="public-subtitle"><i class="fas fa-map-marker-alt"></i> <span id="public-tahun-akademik">Tahun Akademik</span></div>
+    </div>
+    <div class="public-main" id="public-main"></div>
+  </div>
+
+  <!-- ================= LOGIN MODAL ================= -->
+  <div class="modal" id="modal-login">
+    <div class="modal-content" style="max-width: 380px;">
+      <div class="modal-header">
+        <h3><i class="fas fa-lock"></i> Masuk Sistem</h3>
+        <button class="close-btn" onclick="closeModal('modal-login')"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Email Admin</label>
+          <input type="email" id="login-username" class="form-control" placeholder="Masukkan email admin" onkeydown="if(event.key==='Enter') doLogin()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="login-password" class="form-control" placeholder="Masukkan password" onkeydown="if(event.key==='Enter') doLogin()">
+        </div>
+        <p id="login-error" style="display:none; color:var(--danger); font-size:0.8rem; font-weight:600; margin-bottom:10px;"><i class="fas fa-exclamation-circle"></i> Email atau password salah.</p>
+        <button class="btn btn-primary" style="width:100%;" onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> Masuk</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ADMIN APP (butuh login) ================= -->
+  <div class="app-container" id="admin-app" style="display:none;">
     <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <aside class="sidebar">
       <div class="sidebar-header">
@@ -253,12 +351,15 @@
         <div class="nav-item" onclick="navigateTo('generate')"><i class="fas fa-magic"></i> Generate Jadwal</div>
         <div class="nav-item" onclick="navigateTo('jadwal-edit')"><i class="fas fa-edit"></i> Edit Jadwal</div>
         <div class="nav-item" onclick="navigateTo('jadwal-edit-semua')"><i class="fas fa-th-large"></i> Edit Jadwal (Semua Kelas)</div>
-        <div class="nav-item" onclick="navigateTo('jadwal-readonly')"><i class="fas fa-calendar-alt"></i> Lihat Jadwal</div>
         <div class="nav-item" onclick="navigateTo('manual')"><i class="fas fa-hand-pointer"></i> Input Manual</div>
         <div class="nav-divider"></div>
         <div class="nav-item" onclick="navigateTo('rekap')"><i class="fas fa-chart-bar"></i> Rekapitulasi</div>
         <div class="nav-item" onclick="navigateTo('export')"><i class="fas fa-file-excel"></i> Export Data</div>
       </nav>
+      <div class="sidebar-footer">
+        <div class="nav-item" onclick="showPublicApp()"><i class="fas fa-globe"></i> Lihat Halaman Publik</div>
+        <div class="nav-item" onclick="doLogout()" style="color:var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</div>
+      </div>
     </aside>
 
     <main class="main-content" id="main-content"></main>
@@ -323,8 +424,20 @@
 
         <div id="section-tukar" style="display: none;">
             <div class="swap-box">
-                <p style="margin-bottom: 10px; font-size: 0.75rem; color:var(--text-muted); line-height: 1.4;">Jadwal saat ini akan bertukar tempat secara utuh dengan slot yang dipilih.</p>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label class="form-label">Mode Tukar</label>
+                    <select id="tukar-mode" class="form-control" onchange="updateTukarModeUI()">
+                        <option value="penuh">Tukar Posisi Penuh (Mapel &amp; Guru, kelas sama)</option>
+                        <option value="guru">Tukar Guru Saja (boleh kelas lain, mapel tetap di posisinya)</option>
+                    </select>
+                </div>
+                <p id="tukar-desc-penuh" style="margin-bottom: 10px; font-size: 0.75rem; color:var(--text-muted); line-height: 1.4;">Jadwal saat ini akan bertukar tempat secara utuh (mapel &amp; guru) dengan slot yang dipilih, pada kelas yang sama.</p>
+                <p id="tukar-desc-guru" style="display:none; margin-bottom: 10px; font-size: 0.75rem; color:var(--text-muted); line-height: 1.4;">Hanya GURU yang ditukar antara dua slot ini (boleh beda kelas &amp; beda mapel, termasuk kalau ternyata guru di slot tujuan sama dengan guru saat ini). Mapel di masing-masing kelas tidak berubah.</p>
                 <p id="tukar-kelas-info" style="margin-bottom: 10px; font-size: 0.75rem; font-weight:700; color:var(--primary-dark); background:#ecfdf5; padding:6px 10px; border-radius:var(--radius-sm);"></p>
+                <div class="form-group" id="div-tukar-kelas" style="display:none;">
+                    <label class="form-label">Kelas Tujuan</label>
+                    <select id="tukar-kelas" class="form-control" onchange="updateTukarJam()"></select>
+                </div>
                 <div class="grid grid-2" style="gap:8px;">
                     <div class="form-group">
                         <label class="form-label">Hari Tujuan</label>
@@ -332,9 +445,10 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Jam Tujuan</label>
-                        <select id="tukar-jam" class="form-control"></select>
+                        <select id="tukar-jam" class="form-control" onchange="updateTukarPreview()"></select>
                     </div>
                 </div>
+                <div id="tukar-preview-box" style="margin-top:10px; padding:8px 10px; border-radius:var(--radius-sm); font-size:0.75rem; line-height:1.5;"></div>
                 <button class="btn btn-warning" style="width: 100%; margin-top: 8px;" onclick="prosesTukarJadwal()"><i class="fas fa-random"></i> Eksekusi Tukar</button>
             </div>
         </div>
@@ -346,6 +460,20 @@
   <div id="toast" class="toast"></div>
 
   <script>
+    // ==========================================
+    // KONFIGURASI FIREBASE — GANTI DENGAN CONFIG PROYEK ANDA SENDIRI
+    // (Firebase Console > Project Settings > General > Your apps > SDK setup)
+    // ==========================================
+    const firebaseConfig = {
+      apiKey: "GANTI_DENGAN_API_KEY",
+      authDomain: "GANTI_DENGAN_AUTH_DOMAIN",
+      databaseURL: "GANTI_DENGAN_DATABASE_URL",
+      projectId: "GANTI_DENGAN_PROJECT_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const fbAuth = firebase.auth();
+    const DB_REF = firebase.database().ref('jadwalku_v6');
+
     const DB_KEY = 'JadwalKu_V6';
     
     // Semua jam ke- (1..jamMaksimum) sebagai string - daftar penuh pilihan "Jam Bersedia Mengajar"
@@ -386,51 +514,278 @@
       return w;
     }
 
-    function loadDB() {
-      const data = localStorage.getItem(DB_KEY);
-      if (data) {
-        let parsed = JSON.parse(data);
-        if(!parsed.dashboard.durasiJam) parsed.dashboard.durasiJam = 45;
-        if(!parsed.dashboard.durasiIstirahat) parsed.dashboard.durasiIstirahat = 15;
-        
-        if (parsed.waktuDetail && Array.isArray(parsed.waktuDetail)) {
-            let oldWaktu = parsed.waktuDetail;
-            parsed.waktuDetail = {};
-            ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'].slice(0, parsed.dashboard.banyakHari).forEach(h => {
-                parsed.waktuDetail[h] = JSON.parse(JSON.stringify(oldWaktu));
-            });
-        }
-        if(!parsed.waktuDetail) parsed.waktuDetail = generateDefaultWaktu(parsed.dashboard);
-
-        if(parsed.guru) {
-          parsed.guru = parsed.guru.map(g => {
-            if(!g.penugasan) {
-              let kArr = g.kelasAjar ? g.kelasAjar.split(',').map(x=>x.trim()).filter(x=>x) : [];
-              g.penugasan = (kArr.length > 0 && g.mapel) ? [{mapel: g.mapel, kelas: kArr, jamAjar: g.jamAjar||2}] : [];
-            }
-            if(!g.kode) g.kode = '-';
-            if(!g.jamMengajar) g.jamMengajar = getSemuaJamKe(parsed.dashboard);
-            return g;
-          });
-        }
-        return parsed;
-      }
+    function getDefaultData() {
       const defaultDash = { namaSekolah: 'SMA Negeri 1', tahunAkademik: '2025/2026', banyakHari: 6, jamMaksimum: 10, jamIstirahat: "4, 7", durasiJam: 40, durasiIstirahat: 15 };
       return { dashboard: defaultDash, waktuDetail: generateDefaultWaktu(defaultDash), mapel: [], kelas: [], guru: [], jadwal: [] };
     }
-    
-    function saveDB(data) { localStorage.setItem(DB_KEY, JSON.stringify(data)); }
+
+    function migrateData(parsed) {
+      if(!parsed.dashboard.durasiJam) parsed.dashboard.durasiJam = 45;
+      if(!parsed.dashboard.durasiIstirahat) parsed.dashboard.durasiIstirahat = 15;
+
+      if (parsed.waktuDetail && Array.isArray(parsed.waktuDetail)) {
+          let oldWaktu = parsed.waktuDetail;
+          parsed.waktuDetail = {};
+          ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'].slice(0, parsed.dashboard.banyakHari).forEach(h => {
+              parsed.waktuDetail[h] = JSON.parse(JSON.stringify(oldWaktu));
+          });
+      }
+      if(!parsed.waktuDetail) parsed.waktuDetail = generateDefaultWaktu(parsed.dashboard);
+
+      if(parsed.guru) {
+        parsed.guru = parsed.guru.map(g => {
+          if(!g.penugasan) {
+            let kArr = g.kelasAjar ? g.kelasAjar.split(',').map(x=>x.trim()).filter(x=>x) : [];
+            g.penugasan = (kArr.length > 0 && g.mapel) ? [{mapel: g.mapel, kelas: kArr, jamAjar: g.jamAjar||2}] : [];
+          }
+          if(!g.kode) g.kode = '-';
+          if(!g.jamMengajar) g.jamMengajar = getSemuaJamKe(parsed.dashboard);
+          return g;
+        });
+      }
+      return parsed;
+    }
+
+    function saveDB(data) {
+      DB_REF.set(data).catch(err => showToast('Gagal menyimpan ke server: ' + err.message, 'error'));
+    }
     
     let AppState = { 
       currentPage: 'dashboard', settingHari: 'Senin',
-      data: loadDB(), 
+      data: getDefaultData(), 
       editId: null, editType: null, 
       activeRekapTab: 'guru', filterRekapVal: 'Semua', filterKelas: '',
-      searchQuery: { mapel: '', kelas: '', guru: '' }
+      searchQuery: { mapel: '', kelas: '', guru: '' },
+      publicTingkat: 'Semua', dashJadwalMode: 'kelas', dashJadwalFilter: ''
     };
 
-    function init() { navigateTo('dashboard'); }
-    
+    const SESSION_KEY = 'JadwalKu_Session';
+    let publicRefreshTimer = null;
+    let dbLoaded = false, authChecked = false, currentUser = null, appBooted = false;
+
+    function tryBoot() {
+      if (!dbLoaded || !authChecked) return;
+      if (!appBooted) {
+        appBooted = true;
+        document.getElementById('boot-loading') && document.getElementById('boot-loading').remove();
+        currentUser ? showAdminApp() : showPublicApp();
+      } else {
+        currentUser ? showAdminApp() : showPublicApp();
+      }
+    }
+
+    fbAuth.onAuthStateChanged(user => {
+      currentUser = user;
+      authChecked = true;
+      tryBoot();
+    });
+
+    DB_REF.on('value', snapshot => {
+      const val = snapshot.val();
+      if (val) {
+        AppState.data = migrateData(val);
+      } else {
+        AppState.data = getDefaultData();
+        DB_REF.set(AppState.data);
+      }
+      dbLoaded = true;
+      if (!appBooted) {
+        tryBoot();
+      } else if (!currentUser) {
+        // Data berubah dari admin lain / device lain: perbarui tampilan publik secara real-time
+        renderPublicJadwal();
+      }
+    }, err => {
+      showToast('Gagal terhubung ke database: ' + err.message, 'error');
+    });
+
+    function init() {
+      // Booting ditangani oleh listener Firebase Auth + Database di atas (tryBoot()).
+    }
+
+    function showPublicApp() {
+      closeModal('modal-login');
+      document.getElementById('admin-app').style.display = 'none';
+      document.getElementById('public-app').style.display = 'flex';
+      renderPublicJadwal();
+      if (publicRefreshTimer) clearInterval(publicRefreshTimer);
+      publicRefreshTimer = setInterval(renderPublicJadwal, 5 * 60 * 1000);
+    }
+
+    function showAdminApp() {
+      if (publicRefreshTimer) { clearInterval(publicRefreshTimer); publicRefreshTimer = null; }
+      document.getElementById('public-app').style.display = 'none';
+      document.getElementById('admin-app').style.display = 'flex';
+      navigateTo('dashboard');
+    }
+
+    function openLoginModal() {
+      document.getElementById('login-username').value = '';
+      document.getElementById('login-password').value = '';
+      document.getElementById('login-error').style.display = 'none';
+      document.getElementById('modal-login').classList.add('active');
+      setTimeout(() => document.getElementById('login-username').focus(), 100);
+    }
+
+    function doLogin() {
+      const u = document.getElementById('login-username').value.trim();
+      const p = document.getElementById('login-password').value;
+      fbAuth.signInWithEmailAndPassword(u, p)
+        .then(() => {
+          closeModal('modal-login');
+          showToast('Berhasil masuk!', 'success');
+        })
+        .catch(() => {
+          document.getElementById('login-error').style.display = 'block';
+        });
+    }
+
+    function doLogout() {
+      if (!confirm('Yakin ingin keluar dari sistem?')) return;
+      fbAuth.signOut();
+    }
+
+    // ==========================================
+    // HALAMAN PUBLIK - JADWAL HARI INI
+    // ==========================================
+    function renderPublicJadwal() {
+      const d = AppState.data;
+      document.getElementById('public-nama-sekolah').textContent = d.dashboard.namaSekolah || 'Nama Sekolah';
+      document.getElementById('public-tahun-akademik').textContent = 'Tahun Akademik ' + (d.dashboard.tahunAkademik || '-');
+
+      const namaHariArr = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+      const bulanArr = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+      const now = new Date();
+      const hariIni = namaHariArr[now.getDay()];
+      const tanggalStr = `${now.getDate()} ${bulanArr[now.getMonth()]} ${now.getFullYear()}`;
+      const hariAktif = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'].slice(0, d.dashboard.banyakHari);
+      const wHari = d.waktuDetail[hariIni] || [];
+
+      const target = document.getElementById('public-main');
+
+      if (!d.kelas || d.kelas.length === 0) {
+        target.innerHTML = `<div class="public-empty"><i class="fas fa-info-circle" style="font-size:2rem; margin-bottom:10px; display:block;"></i>Belum ada data kelas.</div>`;
+        return;
+      }
+
+      if (!AppState.publicMode) AppState.publicMode = 'kelas';
+      const footerNote = `<div class="public-footer-note">Diperbarui otomatis setiap 5 menit &bull; Terakhir diperbarui: ${now.getHours().toString().padStart(2,'0')}.${now.getMinutes().toString().padStart(2,'0')}</div>`;
+
+      let html = `
+        <div class="public-title-block">
+          <h2>Jadwal Pelajaran Hari Ini</h2>
+          <p>Jadwal hari ${hariIni}, ${tanggalStr}</p>
+        </div>
+        <div class="public-mode-tabs">
+          <button class="public-mode-btn ${AppState.publicMode==='kelas'?'active':''}" onclick="AppState.publicMode='kelas'; renderPublicJadwal()"><i class="fas fa-chalkboard"></i> Per Kelas</button>
+          <button class="public-mode-btn ${AppState.publicMode==='guru'?'active':''}" onclick="AppState.publicMode='guru'; renderPublicJadwal()"><i class="fas fa-user-tie"></i> Per Guru</button>
+          <button class="public-mode-btn ${AppState.publicMode==='mapel'?'active':''}" onclick="AppState.publicMode='mapel'; renderPublicJadwal()"><i class="fas fa-book"></i> Per Mapel</button>
+        </div>
+      `;
+
+      if (!hariAktif.includes(hariIni)) {
+        html += `<div class="public-empty"><i class="fas fa-couch" style="font-size:2rem; margin-bottom:10px; display:block;"></i>Hari ini bukan hari sekolah aktif.</div>` + footerNote;
+        target.innerHTML = html;
+        return;
+      }
+
+      if (AppState.publicMode === 'kelas') {
+        const daftarTingkat = ['Semua', ...Array.from(new Set(d.kelas.map(k => k.tingkat).filter(t => t)))];
+        if (!daftarTingkat.includes(AppState.publicTingkat)) AppState.publicTingkat = 'Semua';
+        const kelasDitampilkan = AppState.publicTingkat === 'Semua' ? d.kelas : d.kelas.filter(k => k.tingkat === AppState.publicTingkat);
+
+        html += `<div class="public-tabs">
+          ${daftarTingkat.map(t => `<button class="public-tab-btn ${AppState.publicTingkat===t?'active':''}" onclick="AppState.publicTingkat='${t}'; renderPublicJadwal()">${t==='Semua'?'Semua Tingkat':'Kelas '+t}</button>`).join('')}
+        </div>`;
+
+        if (kelasDitampilkan.length === 0) {
+          html += `<div class="public-empty">Tidak ada kelas pada tingkat ini.</div>`;
+        } else {
+          html += `<div class="public-kelas-grid">`;
+          kelasDitampilkan.forEach(k => {
+            html += `<div class="public-kelas-card">
+              <div class="public-kelas-card-header">Kelas ${k.nama}</div>
+              <div class="table-responsive" style="border:none;">
+                <table>
+                  <thead><tr><th>Waktu</th><th>Mapel</th><th>Pengampu</th></tr></thead>
+                  <tbody>
+                    ${wHari.map(w => {
+                      if (w.tipe === 'istirahat') return `<tr class="public-istirahat"><td>${w.mulai}</td><td colspan="2">ISTIRAHAT</td></tr>`;
+                      const item = d.jadwal.find(j => j.hari === hariIni && j.jam === w.jamKe && j.kelas === k.nama);
+                      if (item) return `<tr><td>${w.mulai}</td><td><b>${item.mapel}</b></td><td>${item.guru}</td></tr>`;
+                      return `<tr><td>${w.mulai}</td><td colspan="2" class="public-kosong">- Kosong -</td></tr>`;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>`;
+          });
+          html += `</div>`;
+        }
+      }
+
+      else if (AppState.publicMode === 'guru') {
+        if (!d.guru || d.guru.length === 0) {
+          html += `<div class="public-empty">Belum ada data guru.</div>`;
+        } else {
+          if (!AppState.publicGuruFilter || !d.guru.find(g => g.nama === AppState.publicGuruFilter)) AppState.publicGuruFilter = d.guru[0].nama;
+          html += `<div class="public-filter-row">
+            <select class="form-control" onchange="AppState.publicGuruFilter=this.value; renderPublicJadwal()">
+              ${d.guru.map(g => `<option value="${g.nama}" ${g.nama===AppState.publicGuruFilter?'selected':''}>${g.nama}</option>`).join('')}
+            </select>
+          </div>`;
+          html += `<div class="public-kelas-card public-single-card">
+            <div class="public-kelas-card-header">Jadwal ${AppState.publicGuruFilter}</div>
+            <div class="table-responsive" style="border:none;">
+              <table>
+                <thead><tr><th>Waktu</th><th>Kelas</th><th>Mata Pelajaran</th></tr></thead>
+                <tbody>
+                  ${wHari.map(w => {
+                    if (w.tipe === 'istirahat') return `<tr class="public-istirahat"><td>${w.mulai}</td><td colspan="2">ISTIRAHAT</td></tr>`;
+                    const items = d.jadwal.filter(j => j.hari === hariIni && j.jam === w.jamKe && j.guru === AppState.publicGuruFilter);
+                    if (items.length > 0) return `<tr><td>${w.mulai}</td><td>${items.map(it=>'Kls '+it.kelas).join(', ')}</td><td><b>${items.map(it=>it.mapel).join(', ')}</b></td></tr>`;
+                    return `<tr><td>${w.mulai}</td><td colspan="2" class="public-kosong">- Tidak Mengajar -</td></tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>`;
+        }
+      }
+
+      else if (AppState.publicMode === 'mapel') {
+        if (!d.mapel || d.mapel.length === 0) {
+          html += `<div class="public-empty">Belum ada data mata pelajaran.</div>`;
+        } else {
+          if (!AppState.publicMapelFilter || !d.mapel.find(m => m.nama === AppState.publicMapelFilter)) AppState.publicMapelFilter = d.mapel[0].nama;
+          html += `<div class="public-filter-row">
+            <select class="form-control" onchange="AppState.publicMapelFilter=this.value; renderPublicJadwal()">
+              ${d.mapel.map(m => `<option value="${m.nama}" ${m.nama===AppState.publicMapelFilter?'selected':''}>${m.nama}</option>`).join('')}
+            </select>
+          </div>`;
+          html += `<div class="public-kelas-card public-single-card">
+            <div class="public-kelas-card-header">Jadwal Mapel ${AppState.publicMapelFilter}</div>
+            <div class="table-responsive" style="border:none;">
+              <table>
+                <thead><tr><th>Waktu</th><th>Kelas</th><th>Guru Pengampu</th></tr></thead>
+                <tbody>
+                  ${wHari.map(w => {
+                    if (w.tipe === 'istirahat') return `<tr class="public-istirahat"><td>${w.mulai}</td><td colspan="2">ISTIRAHAT</td></tr>`;
+                    const items = d.jadwal.filter(j => j.hari === hariIni && j.jam === w.jamKe && j.mapel === AppState.publicMapelFilter);
+                    if (items.length > 0) return `<tr><td>${w.mulai}</td><td>${items.map(it=>'Kls '+it.kelas).join(', ')}</td><td><b>${items.map(it=>it.guru).join(', ')}</b></td></tr>`;
+                    return `<tr><td>${w.mulai}</td><td colspan="2" class="public-kosong">- Tidak Ada Jadwal -</td></tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>`;
+        }
+      }
+
+      html += footerNote;
+      target.innerHTML = html;
+    }
+
     function toggleSidebar() {
         if (window.innerWidth <= 992) {
             document.body.classList.toggle('sidebar-mobile-open');
@@ -456,7 +811,7 @@
       else if(page === 'generate') renderGenerate(container);
       else if(page === 'jadwal-edit') renderJadwal(container, true);
       else if(page === 'jadwal-edit-semua') renderJadwalSemua(container);
-      else if(page === 'jadwal-readonly') renderLihatJadwal(container);
+      else if(page === 'jadwal-readonly') renderDashboardUI(container);
       else if(page === 'manual') renderManual(container);
       else if(page === 'rekap') { AppState.filterRekapVal = 'Semua'; renderRekap(container); }
       else if(page === 'export') renderExport(container);
@@ -518,20 +873,9 @@
             </div>
         </div>
 
-        <div class="card text-center" style="padding: 40px 16px; background: var(--gradient-card);">
-            <i class="fas fa-calendar-alt" style="font-size: 3.5rem; color: var(--primary); margin-bottom: 16px; opacity: 0.8;"></i>
-            <h2 style="font-size:1.3rem; margin-bottom:8px; color:var(--dark);">Selamat Datang di JadwalKu</h2>
-            <p style="color:var(--text-muted); max-width: 500px; margin: 0 auto 20px; line-height:1.5; font-size:0.85rem;">
-                Sistem penjadwalan pelajaran otomatis dan terpadu. 
-                Gunakan menu untuk mengelola master data, membuat jadwal, hingga cetak rekap.
-            </p>
-            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                <button class="btn btn-primary" onclick="navigateTo('guru')"><i class="fas fa-user-plus"></i> Kelola Guru</button>
-                <button class="btn btn-success" onclick="navigateTo('generate')"><i class="fas fa-magic"></i> Generate Jadwal</button>
-                <button class="btn btn-outline" onclick="navigateTo('rekap')"><i class="fas fa-chart-bar"></i> Lihat Rekap</button>
-            </div>
-        </div>
+        <div id="dash-jadwal-viewer"></div>
         `;
+        renderDashJadwalViewer(document.getElementById('dash-jadwal-viewer'));
     }
 
     // ==========================================
@@ -579,6 +923,16 @@
             </div>
           </div>
           
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header"><span class="card-title"><i class="fas fa-key"></i> Akun Login Admin</span></div>
+            <div class="grid grid-2" style="gap:12px;">
+                <div class="form-group"><label class="form-label">Email Admin (aktif)</label><input type="text" class="form-control" value="${(fbAuth.currentUser && fbAuth.currentUser.email) || '-'}" disabled></div>
+                <div class="form-group"><label class="form-label">Password Baru</label><input type="password" id="d-auth-pass" class="form-control" placeholder="Kosongkan jika tidak diubah"></div>
+            </div>
+            <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">Email admin diatur lewat Firebase Console (Authentication). Di sini hanya untuk ganti password akun yang sedang login.</p>
+            <button class="btn btn-primary btn-sm" onclick="saveAuth()"><i class="fas fa-save"></i> Ganti Password</button>
+          </div>
+
           <div class="card">
             <div class="card-header"><span class="card-title">Detail Waktu Harian</span></div>
             <div class="form-group">
@@ -608,6 +962,18 @@
             <button class="btn btn-success" style="width:100%" onclick="saveWaktu()"><i class="fas fa-check"></i> Simpan Waktu Hari ${actHari}</button>
           </div>
         </div>`;
+    }
+
+    function saveAuth() {
+      const p = document.getElementById('d-auth-pass').value;
+      if (!p) return showToast('Isi password baru untuk mengubahnya!', 'warning');
+      if (!fbAuth.currentUser) return showToast('Sesi login tidak valid, silakan login ulang.', 'error');
+      fbAuth.currentUser.updatePassword(p)
+        .then(() => {
+          document.getElementById('d-auth-pass').value = '';
+          showToast('Password diperbarui!', 'success');
+        })
+        .catch(err => showToast('Gagal ganti password: ' + err.message + ' (coba logout lalu login ulang, lalu coba lagi)', 'error'));
     }
 
     function saveDashboard(resetWaktu) {
@@ -674,7 +1040,7 @@
         if(confirm("PERINGATAN KERAS! Anda akan menghapus SEMUA data Jadwal, Kelas, Guru, dan Mata Pelajaran secara permanen. Lanjutkan?")) {
             let konfirmasi = prompt("Ketik 'HAPUS' untuk mengonfirmasi tindakan ini:");
             if (konfirmasi === 'HAPUS') {
-                localStorage.removeItem(DB_KEY);
+                DB_REF.set(getDefaultData());
                 showToast('Aplikasi berhasil di-reset.', 'success');
                 setTimeout(() => location.reload(), 1500);
             } else {
@@ -1518,9 +1884,9 @@
       }).from(el).save().then(() => { titleEl.style.display = 'none'; el.style.padding = paddingLama; showToast('File PDF diunduh!', 'success'); });
     }
 
-    function renderLihatJadwal(c) {
-      const d = AppState.data; if(!d.jadwal || d.jadwal.length === 0) return c.innerHTML = `<div class="card text-center" style="padding:30px;">Belum ada jadwal.</div>`;
-      if(!AppState.lihatMode) AppState.lihatMode = 'guru';
+    function renderDashJadwalViewer(c) {
+      const d = AppState.data; if(!d.jadwal || d.jadwal.length === 0) return c.innerHTML = `<div class="card text-center" style="padding:30px;">Belum ada jadwal. Silakan generate jadwal terlebih dahulu.</div>`;
+      if(!AppState.lihatMode) AppState.lihatMode = 'kelas';
       
       if(!AppState.lihatFilter) { 
           if(AppState.lihatMode === 'guru' && d.guru.length > 0) AppState.lihatFilter = d.guru[0].nama; 
@@ -1532,24 +1898,26 @@
       const maxJam = d.dashboard.jamMaksimum;
 
       let html = `
-      <div class="header">
-        <h2><button class="btn-toggle-sidebar" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button> <i class="fas fa-calendar-alt"></i> Lihat Jadwal</h2>
-        <div class="header-actions">
-          <select class="form-control" style="width: 130px" onchange="AppState.lihatMode=this.value; AppState.lihatFilter=''; renderLihatJadwal(document.getElementById('main-content'))">
-              <option value="guru" ${AppState.lihatMode==='guru'?'selected':''}>Per Guru</option>
-              <option value="mapel" ${AppState.lihatMode==='mapel'?'selected':''}>Per Mapel</option>
-              <option value="kelas" ${AppState.lihatMode==='kelas'?'selected':''}>Per Kelas</option>
-          </select>
-          <select class="form-control" style="width: 180px" onchange="AppState.lihatFilter=this.value; renderLihatJadwal(document.getElementById('main-content'))">
-              ${(AppState.lihatMode === 'guru' ? d.guru : (AppState.lihatMode === 'mapel' ? d.mapel : d.kelas)).map(x => {
-                  let labelTeks = x.nama;
-                  if (AppState.lihatMode === 'kelas') labelTeks = 'Kelas ' + x.nama;
-                  else if (AppState.lihatMode === 'mapel') labelTeks = `${x.nama} (Tk. ${x.tingkat || '-'})`;
-                  return `<option value="${x.nama}" ${x.nama===AppState.lihatFilter?'selected':''}>${labelTeks}</option>`;
-              }).join('')}
-          </select>
-          <button class="btn btn-success btn-sm" onclick="exportLihatJadwalExcel()"><i class="fas fa-file-excel"></i></button>
-          <button class="btn btn-danger btn-sm" onclick="exportLihatJadwalPDF()"><i class="fas fa-file-pdf"></i></button>
+      <div class="card" style="margin-bottom: 12px;">
+        <div class="card-header" style="flex-wrap:wrap; gap:10px; margin-bottom:0; padding-bottom:0; border-bottom:none;">
+          <span class="card-title"><i class="fas fa-calendar-alt"></i> Lihat Jadwal</span>
+          <div class="header-actions" style="display:flex; gap:8px; flex-wrap:wrap;">
+            <select class="form-control" style="width: 150px" onchange="AppState.lihatMode=this.value; AppState.lihatFilter=''; renderDashJadwalViewer(document.getElementById('dash-jadwal-viewer'))">
+                <option value="kelas" ${AppState.lihatMode==='kelas'?'selected':''}>Per Kelas</option>
+                <option value="guru" ${AppState.lihatMode==='guru'?'selected':''}>Per Orang (Guru)</option>
+                <option value="mapel" ${AppState.lihatMode==='mapel'?'selected':''}>Per Mapel</option>
+            </select>
+            <select class="form-control" style="width: 180px" onchange="AppState.lihatFilter=this.value; renderDashJadwalViewer(document.getElementById('dash-jadwal-viewer'))">
+                ${(AppState.lihatMode === 'guru' ? d.guru : (AppState.lihatMode === 'mapel' ? d.mapel : d.kelas)).map(x => {
+                    let labelTeks = x.nama;
+                    if (AppState.lihatMode === 'kelas') labelTeks = 'Kelas ' + x.nama;
+                    else if (AppState.lihatMode === 'mapel') labelTeks = `${x.nama} (Tk. ${x.tingkat || '-'})`;
+                    return `<option value="${x.nama}" ${x.nama===AppState.lihatFilter?'selected':''}>${labelTeks}</option>`;
+                }).join('')}
+            </select>
+            <button class="btn btn-success btn-sm" onclick="exportLihatJadwalExcel()"><i class="fas fa-file-excel"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="exportLihatJadwalPDF()"><i class="fas fa-file-pdf"></i></button>
+          </div>
         </div>
       </div>
       
@@ -1598,7 +1966,37 @@
     }
     
     function checkKegiatan() { document.getElementById('div-kegiatan-manual').style.display = (document.getElementById('edit-cell-guru').value === 'Lainnya|Kegiatan Bebas') ? 'block' : 'none'; }
-    window.updateTukarJam = function() { const h = document.getElementById('tukar-hari').value; const jSaatIni = parseInt(document.getElementById('edit-cell-jam').value); let optJam = ''; if(AppState.data.waktuDetail[h]) { AppState.data.waktuDetail[h].filter(w=>w.tipe==='mapel').forEach(w => { optJam += `<option value="${w.jamKe}" ${w.jamKe===jSaatIni?'selected':''}>Jam ke-${w.jamKe}</option>`; }); } document.getElementById('tukar-jam').innerHTML = optJam; };
+    window.updateTukarJam = function() { const h = document.getElementById('tukar-hari').value; const jSaatIni = parseInt(document.getElementById('edit-cell-jam').value); let optJam = ''; if(AppState.data.waktuDetail[h]) { AppState.data.waktuDetail[h].filter(w=>w.tipe==='mapel').forEach(w => { optJam += `<option value="${w.jamKe}" ${w.jamKe===jSaatIni?'selected':''}>Jam ke-${w.jamKe}</option>`; }); } document.getElementById('tukar-jam').innerHTML = optJam; updateTukarPreview(); };
+
+    // Menampilkan siapa guru yang saat ini mengisi slot TUJUAN (kelas/hari/jam yang dipilih untuk ditukar),
+    // lengkap dengan status ketersediaan guru tsb untuk mengajar di hari & jam ASAL (karena itulah tempat
+    // barunya kalau pertukaran dieksekusi).
+    window.updateTukarPreview = function() {
+        const box = document.getElementById('tukar-preview-box'); if(!box) return;
+        const h1 = document.getElementById('edit-cell-hari').value; const j1 = parseInt(document.getElementById('edit-cell-jam').value);
+        const mode = document.getElementById('tukar-mode').value;
+        const k2 = (mode === 'guru') ? document.getElementById('tukar-kelas').value : document.getElementById('edit-cell-kelas').value;
+        const h2 = document.getElementById('tukar-hari').value; const j2Raw = document.getElementById('tukar-jam').value;
+        if(!h2 || !j2Raw) { box.style.background = '#f1f5f9'; box.innerHTML = '<i class="fas fa-info-circle"></i> Slot tujuan belum dipilih.'; return; }
+        const j2 = parseInt(j2Raw);
+
+        const entriTujuan = AppState.data.jadwal.find(j => j.hari === h2 && j.jam === j2 && j.kelas === k2);
+        if(!entriTujuan) { box.style.background = '#f0fdf4'; box.style.border = '1px solid #bbf7d0'; box.innerHTML = `<i class="fas fa-check-circle" style="color:var(--success);"></i> Slot tujuan (Kls ${k2} &bull; ${h2} Jam ${j2}) masih <b>kosong</b>, aman untuk diisi.`; return; }
+        if(entriTujuan.guru === '-') { box.style.background = '#fffbeb'; box.style.border = '1px solid #fde68a'; box.innerHTML = `<i class="fas fa-exclamation-triangle" style="color:#b45309;"></i> Slot tujuan berisi <b>kegiatan manual</b> (${entriTujuan.mapel}), tidak ada guru yang bisa ditukar.`; return; }
+
+        const guruObj = AppState.data.guru.find(g => g.nama === entriTujuan.guru);
+        const kodeGuru = guruObj ? guruObj.kode : '-';
+        const tersediaHari = !guruObj || !guruObj.hariMengajar || guruObj.hariMengajar.includes(h1);
+        const tersediaJam = !guruObj || !guruObj.jamMengajar || guruObj.jamMengajar.includes(j1.toString());
+        const tersedia = tersediaHari && tersediaJam;
+
+        box.style.background = tersedia ? '#f0fdf4' : '#fef2f2'; box.style.border = tersedia ? '1px solid #bbf7d0' : '1px solid #fecaca';
+        box.innerHTML = `
+            <div><i class="fas fa-chalkboard-teacher"></i> Slot tujuan (Kls ${k2} &bull; ${h2} Jam ${j2}) saat ini:</div>
+            <div style="margin-top:2px; font-weight:700; color:var(--dark);">${kodeGuru} - ${entriTujuan.guru} <span style="font-weight:500; color:var(--text-muted);">(${entriTujuan.mapel})</span></div>
+            <div style="margin-top:4px;">${tersedia ? `<i class="fas fa-check-circle" style="color:var(--success);"></i> Tersedia mengajar di ${h1} Jam ${j1} (slot asal Anda).` : `<i class="fas fa-exclamation-triangle" style="color:#dc2626;"></i> <b>Di luar jadwal biasa</b> guru ini untuk mengajar di ${h1} Jam ${j1}.`}</div>
+        `;
+    };
 
     function bukaEditCell(hari, jam, kelas, guruSaatIni, mapelSaatIni) {
       document.getElementById('edit-cell-info').innerHTML = `<i class="fas fa-map-marker-alt" style="color:var(--primary); margin-right:4px;"></i> Kls ${kelas} &bull; ${hari}, Jam ${jam}`;
@@ -1635,10 +2033,22 @@
       checkKegiatan(); document.getElementById('edit-cell-durasi').value = '1';
 
       let optHari = ''; ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'].slice(0, AppState.data.dashboard.banyakHari).forEach(h => { optHari += `<option value="${h}" ${h===hari?'selected':''}>${h}</option>`; });
-      document.getElementById('tukar-hari').innerHTML = optHari; updateTukarJam(); switchEditTab('ubah'); document.getElementById('modal-edit-cell').classList.add('active');
+      document.getElementById('tukar-hari').innerHTML = optHari;
+      let optKelasTukar = ''; AppState.data.kelas.forEach(k2 => { optKelasTukar += `<option value="${k2.nama}" ${k2.nama===kelas?'selected':''}>${k2.nama}</option>`; });
+      document.getElementById('tukar-kelas').innerHTML = optKelasTukar;
+      document.getElementById('tukar-mode').value = 'penuh'; updateTukarModeUI();
+      updateTukarJam(); switchEditTab('ubah'); document.getElementById('modal-edit-cell').classList.add('active');
       const tukarInfoEl = document.getElementById('tukar-kelas-info');
-      if(tukarInfoEl) tukarInfoEl.innerHTML = `<i class="fas fa-chalkboard"></i> Kelas ${kelas}`;
+      if(tukarInfoEl) tukarInfoEl.innerHTML = `<i class="fas fa-chalkboard"></i> Kelas asal: ${kelas}`;
     }
+
+    window.updateTukarModeUI = function() {
+      const mode = document.getElementById('tukar-mode').value;
+      document.getElementById('div-tukar-kelas').style.display = (mode === 'guru') ? 'block' : 'none';
+      document.getElementById('tukar-desc-penuh').style.display = (mode === 'penuh') ? 'block' : 'none';
+      document.getElementById('tukar-desc-guru').style.display = (mode === 'guru') ? 'block' : 'none';
+      updateTukarPreview();
+    };
 
     function simpanEditCell() {
       const hari = document.getElementById('edit-cell-hari').value; const jamMulai = parseInt(document.getElementById('edit-cell-jam').value); const kelas = document.getElementById('edit-cell-kelas').value; const comboVal = document.getElementById('edit-cell-guru').value; const durasi = parseInt(document.getElementById('edit-cell-durasi').value) || 1;
@@ -1696,7 +2106,7 @@
       }
 
       for(let i=0; i < durasi; i++) { let jamTarget = jamMulai + i; const idx = AppState.data.jadwal.findIndex(j => j.hari === hari && j.jam === jamTarget && j.kelas === kelas); if(idx >= 0) { AppState.data.jadwal[idx] = { hari, jam: jamTarget, kelas, mapel: mapelBaru, guru: guruBaru }; } else { AppState.data.jadwal.push({ hari, jam: jamTarget, kelas, mapel: mapelBaru, guru: guruBaru }); } }
-      saveDB(AppState.data); closeModal('modal-edit-cell'); navigateTo('jadwal-edit'); showToast('Berhasil disimpan!', 'success');
+      saveDB(AppState.data); closeModal('modal-edit-cell'); navigateTo(AppState.currentPage || 'jadwal-edit'); showToast('Berhasil disimpan!', 'success');
     }
 
     // Fungsi inti tukar 2 slot jadwal (dipakai baik oleh tombol "Eksekusi Tukar" maupun oleh geser drag & drop).
@@ -1718,7 +2128,6 @@
               if (guru1.hariMengajar && !guru1.hariMengajar.includes(h2)) { showToast(`Gagal! ${temp1.guru} tidak bisa mengajar hari ${h2}.`, 'error'); return false; }
               if (guru1.jamMengajar && !guru1.jamMengajar.includes(j2.toString())) { showToast(`Gagal! ${temp1.guru} tidak bisa mengajar jam ${j2}.`, 'error'); return false; }
           }
-          const bentrokSlot2 = AppState.data.jadwal.find(j => j.hari === h2 && j.jam === j2 && j.guru === temp1.guru && j.kelas !== k); if(bentrokSlot2) { showToast(`Gagal! ${temp1.guru} bentrok di Kls ${bentrokSlot2.kelas}.`, 'error'); return false; }
       }
       if (temp2 && temp2.guru !== '-') {
           const guru2 = AppState.data.guru.find(g => g.nama === temp2.guru);
@@ -1726,20 +2135,97 @@
               if (guru2.hariMengajar && !guru2.hariMengajar.includes(h1)) { showToast(`Gagal! ${temp2.guru} tidak bisa mengajar hari ${h1}.`, 'error'); return false; }
               if (guru2.jamMengajar && !guru2.jamMengajar.includes(j1.toString())) { showToast(`Gagal! ${temp2.guru} tidak bisa mengajar jam ${j1}.`, 'error'); return false; }
           }
-          const bentrokSlot1 = AppState.data.jadwal.find(j => j.hari === h1 && j.jam === j1 && j.guru === temp2.guru && j.kelas !== k); if(bentrokSlot1) { showToast(`Gagal! ${temp2.guru} bentrok di Kls ${bentrokSlot1.kelas}.`, 'error'); return false; }
       }
 
+      // GURU BOLEH TUKAR HARI WALAU BEDA MAPEL & KELAS: kalau guru dari slot asal ternyata SUDAH punya kelas
+      // lain (mapel & kelas berbeda) di jam tujuan, sesi kelas lain itu IKUT dipindah ke jam asal (bukan
+      // langsung diblokir sebagai "bentrok"), supaya guru tsb tetap konsisten tidak mengajar 2 kelas di jam
+      // yang sama. Begitu juga sebaliknya untuk guru dari slot tujuan.
+      let geserSilang1 = null; // sesi lain milik guru1 (temp1) di kelas berbeda pada (h2, j2) -> akan dipindah ke (h1, j1)
+      if (temp1 && temp1.guru !== '-') {
+          geserSilang1 = AppState.data.jadwal.find(j => j.hari === h2 && j.jam === j2 && j.guru === temp1.guru && j.kelas !== k);
+          if (geserSilang1) {
+              const bentrokTujuanGeser1 = AppState.data.jadwal.find(j => j.hari === h1 && j.jam === j1 && j.kelas === geserSilang1.kelas);
+              if (bentrokTujuanGeser1) { showToast(`Gagal! Kelas ${geserSilang1.kelas} sudah terisi mapel lain di jam asal, tidak bisa menggeser jadwal ${temp1.guru} ke sana.`, 'error'); return false; }
+          }
+      }
+      let geserSilang2 = null; // sesi lain milik guru2 (temp2) di kelas berbeda pada (h1, j1) -> akan dipindah ke (h2, j2)
+      if (temp2 && temp2.guru !== '-') {
+          geserSilang2 = AppState.data.jadwal.find(j => j.hari === h1 && j.jam === j1 && j.guru === temp2.guru && j.kelas !== k);
+          if (geserSilang2) {
+              const bentrokTujuanGeser2 = AppState.data.jadwal.find(j => j.hari === h2 && j.jam === j2 && j.kelas === geserSilang2.kelas);
+              if (bentrokTujuanGeser2 && bentrokTujuanGeser2 !== geserSilang1) { showToast(`Gagal! Kelas ${geserSilang2.kelas} sudah terisi mapel lain di jam tujuan, tidak bisa menggeser jadwal ${temp2.guru} ke sana.`, 'error'); return false; }
+          }
+      }
+
+      // Eksekusi tukar posisi utama (kelas k)
       if (idx1 >= 0) { if (temp2) { AppState.data.jadwal[idx1].mapel = temp2.mapel; AppState.data.jadwal[idx1].guru = temp2.guru; } else { AppState.data.jadwal.splice(idx1, 1); } } else if (temp2) { AppState.data.jadwal.push({ hari: h1, jam: j1, kelas: k, mapel: temp2.mapel, guru: temp2.guru }); }
       const newIdx2 = AppState.data.jadwal.findIndex(j => j.hari === h2 && j.jam === j2 && j.kelas === k);
       if (newIdx2 >= 0) { if (temp1) { AppState.data.jadwal[newIdx2].mapel = temp1.mapel; AppState.data.jadwal[newIdx2].guru = temp1.guru; } else { AppState.data.jadwal.splice(newIdx2, 1); } } else if (temp1) { AppState.data.jadwal.push({ hari: h2, jam: j2, kelas: k, mapel: temp1.mapel, guru: temp1.guru }); }
+
+      // Ikut geser sesi kelas lain milik guru1 dari (h2,j2) ke (h1,j1)
+      if (geserSilang1) {
+          const idxLama1 = AppState.data.jadwal.findIndex(j => j === geserSilang1 || (j.hari === h2 && j.jam === j2 && j.kelas === geserSilang1.kelas && j.guru === geserSilang1.guru));
+          if (idxLama1 >= 0) AppState.data.jadwal.splice(idxLama1, 1);
+          AppState.data.jadwal.push({ hari: h1, jam: j1, kelas: geserSilang1.kelas, mapel: geserSilang1.mapel, guru: geserSilang1.guru });
+      }
+      // Ikut geser sesi kelas lain milik guru2 dari (h1,j1) ke (h2,j2)
+      if (geserSilang2) {
+          const idxLama2 = AppState.data.jadwal.findIndex(j => j === geserSilang2 || (j.hari === h1 && j.jam === j1 && j.kelas === geserSilang2.kelas && j.guru === geserSilang2.guru));
+          if (idxLama2 >= 0) AppState.data.jadwal.splice(idxLama2, 1);
+          AppState.data.jadwal.push({ hari: h2, jam: j2, kelas: geserSilang2.kelas, mapel: geserSilang2.mapel, guru: geserSilang2.guru });
+      }
+
+      saveDB(AppState.data);
+      return true;
+    }
+
+    // Tukar HANYA guru antara dua slot (boleh beda kelas & beda mapel). Mapel pada masing-masing kelas
+    // TIDAK ikut berubah -- hanya identitas guru yang bertukar tempat. Kalau kebetulan gurunya sama
+    // di kedua slot, tetap diperbolehkan (tidak dianggap error / bentrok dengan dirinya sendiri).
+    function tukarGuruAntarKelas(h1, j1, k1, h2, j2, k2) {
+      if(h1 === h2 && j1 === j2 && k1 === k2) { showToast("Pilih slot tujuan yang berbeda!", "warning"); return false; }
+      const wTujuan = (AppState.data.waktuDetail[h2] || []).find(w => w.jamKe === j2);
+      if(!wTujuan || wTujuan.tipe === 'istirahat') { showToast('Tidak bisa menukar ke jam istirahat!', 'error'); return false; }
+      const wAsal = (AppState.data.waktuDetail[h1] || []).find(w => w.jamKe === j1);
+      if(!wAsal || wAsal.tipe === 'istirahat') { showToast('Slot asal adalah jam istirahat, tidak bisa ditukar!', 'error'); return false; }
+
+      const idx1 = AppState.data.jadwal.findIndex(j => j.hari === h1 && j.jam === j1 && j.kelas === k1);
+      const idx2 = AppState.data.jadwal.findIndex(j => j.hari === h2 && j.jam === j2 && j.kelas === k2);
+      if(idx1 < 0 || idx2 < 0) { showToast('Kedua slot harus sudah terisi mapel & guru untuk bisa tukar guru.', 'error'); return false; }
+      const entry1 = AppState.data.jadwal[idx1]; const entry2 = AppState.data.jadwal[idx2];
+      if(entry1.guru === '-' || entry2.guru === '-') { showToast('Slot kegiatan manual (tanpa guru) tidak bisa dipakai untuk tukar guru.', 'error'); return false; }
+
+      const guru1 = AppState.data.guru.find(g => g.nama === entry1.guru);
+      const guru2 = AppState.data.guru.find(g => g.nama === entry2.guru);
+      if(guru1) {
+          if(guru1.hariMengajar && !guru1.hariMengajar.includes(h2)) { showToast(`Gagal! ${entry1.guru} tidak bisa mengajar hari ${h2}.`, 'error'); return false; }
+          if(guru1.jamMengajar && !guru1.jamMengajar.includes(j2.toString())) { showToast(`Gagal! ${entry1.guru} tidak bisa mengajar jam ${j2}.`, 'error'); return false; }
+      }
+      if(guru2) {
+          if(guru2.hariMengajar && !guru2.hariMengajar.includes(h1)) { showToast(`Gagal! ${entry2.guru} tidak bisa mengajar hari ${h1}.`, 'error'); return false; }
+          if(guru2.jamMengajar && !guru2.jamMengajar.includes(j1.toString())) { showToast(`Gagal! ${entry2.guru} tidak bisa mengajar jam ${j1}.`, 'error'); return false; }
+      }
+      // Cek bentrok hanya kalau gurunya BEDA -- kalau gurunya sama, tidak mungkin bentrok dengan dirinya sendiri.
+      if(entry1.guru !== entry2.guru) {
+          const bentrok1 = AppState.data.jadwal.find(j => j.hari === h2 && j.jam === j2 && j.guru === entry1.guru && j.kelas !== k2);
+          if(bentrok1) { showToast(`Gagal! ${entry1.guru} sudah mengajar Kls ${bentrok1.kelas} di jam tujuan.`, 'error'); return false; }
+          const bentrok2 = AppState.data.jadwal.find(j => j.hari === h1 && j.jam === j1 && j.guru === entry2.guru && j.kelas !== k1);
+          if(bentrok2) { showToast(`Gagal! ${entry2.guru} sudah mengajar Kls ${bentrok2.kelas} di jam asal.`, 'error'); return false; }
+      }
+
+      const guruLama1 = entry1.guru;
+      AppState.data.jadwal[idx1].guru = entry2.guru;
+      AppState.data.jadwal[idx2].guru = guruLama1;
       saveDB(AppState.data);
       return true;
     }
 
     function prosesTukarJadwal() {
       const h1 = document.getElementById('edit-cell-hari').value; const j1 = parseInt(document.getElementById('edit-cell-jam').value); const k = document.getElementById('edit-cell-kelas').value; const h2 = document.getElementById('tukar-hari').value; const j2 = parseInt(document.getElementById('tukar-jam').value);
-      const berhasil = tukarSlotJadwal(h1, j1, k, h2, j2);
-      if(berhasil) { closeModal('modal-edit-cell'); navigateTo('jadwal-edit'); showToast('Ditukar!', 'success'); }
+      const mode = document.getElementById('tukar-mode').value;
+      const berhasil = (mode === 'guru') ? tukarGuruAntarKelas(h1, j1, k, h2, j2, document.getElementById('tukar-kelas').value) : tukarSlotJadwal(h1, j1, k, h2, j2);
+      if(berhasil) { closeModal('modal-edit-cell'); navigateTo(AppState.currentPage || 'jadwal-edit'); showToast('Ditukar!', 'success'); }
     }
 
     // ==========================================
@@ -1765,13 +2251,13 @@
     window.dragDropCell = function(ev, hariTarget, jamTarget, kelas) {
       ev.preventDefault(); ev.stopPropagation(); ev.currentTarget.classList.remove('drag-over');
       const src = window._dragSrcJadwal; window._dragSrcJadwal = null;
-      if(!src || src.kelas !== kelas) return; // tampilan jadwal saat ini per-kelas, geser hanya berlaku dlm kelas yg sama
+      if(!src || src.kelas !== kelas) return; // geser hanya berlaku dlm kelas yg sama
       if(src.hari === hariTarget && src.jam === jamTarget) return; // drop di kotak yang sama, tidak ada perubahan
       const berhasil = tukarSlotJadwal(src.hari, src.jam, kelas, hariTarget, jamTarget);
-      if(berhasil) { navigateTo('jadwal-edit'); showToast('Jadwal berhasil ditukar dengan geser!', 'success'); }
+      if(berhasil) { navigateTo(AppState.currentPage || 'jadwal-edit'); showToast('Jadwal berhasil ditukar dengan geser!', 'success'); }
     };
 
-    function kosongkanCell() { const h = document.getElementById('edit-cell-hari').value; const j = parseInt(document.getElementById('edit-cell-jam').value); const k = document.getElementById('edit-cell-kelas').value; AppState.data.jadwal = AppState.data.jadwal.filter(x => !(x.hari === h && x.jam === j && x.kelas === k)); saveDB(AppState.data); closeModal('modal-edit-cell'); navigateTo('jadwal-edit'); showToast('Dikosongkan!', 'success'); }
+    function kosongkanCell() { const h = document.getElementById('edit-cell-hari').value; const j = parseInt(document.getElementById('edit-cell-jam').value); const k = document.getElementById('edit-cell-kelas').value; AppState.data.jadwal = AppState.data.jadwal.filter(x => !(x.hari === h && x.jam === j && x.kelas === k)); saveDB(AppState.data); closeModal('modal-edit-cell'); navigateTo(AppState.currentPage || 'jadwal-edit'); showToast('Dikosongkan!', 'success'); }
 
     function bukaHapusMassal() {
       const d = AppState.data; document.getElementById('modal-title').innerText = `Pembersihan Jadwal`;
@@ -2017,6 +2503,16 @@
         </div>`;
     }
 
+    // Palet warna lembut (fill) yang dipakai bergantian per guru -- ditentukan dari nama guru (hash),
+    // supaya guru yang sama SELALU dapat warna yang sama di seluruh sheet, dan sel Mapel (MP) memakai
+    // warna yang PERSIS SAMA dengan sel Kode Guru (KG) pada jam tsb.
+    const PALET_WARNA_GURU = ['FDE2E2','E2F0FD','E2FDE9','FDF6E2','F0E2FD','E2FDF6','FDE2F0','E9FDE2','E2E6FD','FDEAE2','E2FDFD','F6E2FD','FDFCE2','E2FDD9','EAE2FD','FDE2E9'];
+    function warnaFillGuru(namaGuru) {
+      if(!namaGuru || namaGuru === '-') return null;
+      let hash = 0; for(let i=0; i<namaGuru.length; i++) hash = (hash * 31 + namaGuru.charCodeAt(i)) >>> 0;
+      return PALET_WARNA_GURU[hash % PALET_WARNA_GURU.length];
+    }
+
     function exportJadwalMatrix() {
       const d = AppState.data; const kelasList = [...d.kelas].sort((a,b) => a.tingkat - b.tingkat || a.nama.localeCompare(b.nama)); const hariAktif = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'].slice(0, d.dashboard.banyakHari); 
       let ws_data = []; let merges = []; ws_data.push([`JADWAL MATA PELAJARAN ${d.dashboard.namaSekolah}`.toUpperCase()]); ws_data.push([`TAHUN PELAJARAN : ${d.dashboard.tahunAkademik}`.toUpperCase()]); ws_data.push([]); 
@@ -2024,7 +2520,7 @@
       kelasList.forEach(k => { header1.push(`KELAS ${k.nama}`, ""); header2.push("MP", "KG"); merges.push({ s: {r: 3, c: colIdx}, e: {r: 3, c: colIdx+1} }); colIdx += 2; });
       ws_data.push(header1); ws_data.push(header2); merges.push({ s: {r: 3, c: 0}, e: {r: 4, c: 0} }); merges.push({ s: {r: 3, c: 1}, e: {r: 4, c: 1} }); merges.push({ s: {r: 3, c: 2}, e: {r: 4, c: 2} }); merges.push({ s: {r: 0, c: 0}, e: {r: 0, c: colIdx-1} }); merges.push({ s: {r: 1, c: 0}, e: {r: 1, c: colIdx-1} });
       let currentRow = 5; 
-      hariAktif.forEach((hari) => { let startRowHari = currentRow; for(let i=1; i<=d.dashboard.jamMaksimum; i++) { let wHari = d.waktuDetail[hari] || []; let w = wHari.find(x => x.jamKe === i); if(!w) continue; let row = [hari, w.tipe === 'istirahat' ? 'IST' : w.jamKe, `${w.mulai} - ${w.selesai}`]; kelasList.forEach(k => { if (w.tipe === 'istirahat') { row.push("ISTIRAHAT", ""); } else { const item = d.jadwal.find(j => j.hari === hari && j.jam === w.jamKe && j.kelas === k.nama); if (item) { const guruObj = d.guru.find(g => g.nama === item.guru); const kodeGuru = guruObj && guruObj.kode !== '-' ? guruObj.kode : item.guru; row.push(item.mapel, kodeGuru); } else { row.push("", ""); } } }); ws_data.push(row); currentRow++; } if (currentRow - 1 > startRowHari) { merges.push({ s: {r: startRowHari, c: 0}, e: {r: currentRow - 1, c: 0} }); } });
+      hariAktif.forEach((hari) => { let startRowHari = currentRow; for(let i=1; i<=d.dashboard.jamMaksimum; i++) { let wHari = d.waktuDetail[hari] || []; let w = wHari.find(x => x.jamKe === i); if(!w) continue; let row = [hari, w.tipe === 'istirahat' ? 'IST' : w.jamKe, `${w.mulai} - ${w.selesai}`]; kelasList.forEach(k => { if (w.tipe === 'istirahat') { row.push("ISTIRAHAT", ""); } else { const item = d.jadwal.find(j => j.hari === hari && j.jam === w.jamKe && j.kelas === k.nama); if (item) { const guruObj = d.guru.find(g => g.nama === item.guru); const kodeGuru = guruObj && guruObj.kode !== '-' ? guruObj.kode : item.guru; const warna = warnaFillGuru(item.guru); const gaya = warna ? { s: { fill: { fgColor: { rgb: warna } } } } : {}; row.push({ v: item.mapel, ...gaya }, { v: kodeGuru, ...gaya }); } else { row.push("", ""); } } }); ws_data.push(row); currentRow++; } if (currentRow - 1 > startRowHari) { merges.push({ s: {r: startRowHari, c: 0}, e: {r: currentRow - 1, c: 0} }); } });
       let wb = XLSX.utils.book_new(); let ws = XLSX.utils.aoa_to_sheet(ws_data); ws['!merges'] = merges; XLSX.utils.book_append_sheet(wb, ws, "Jadwal Matrix"); XLSX.writeFile(wb, `Jadwal_Matrix.xlsx`);
     }
 
